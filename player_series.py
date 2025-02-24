@@ -17,7 +17,7 @@ stat = ['PTS', 'FGA', 'AST', 'TRB']
 def player_gen(player): 
     player = player.lower()
     first_name = player[:2]
-    last_name = re.sub("(^\w+)", '', player) #getting the player's surname
+    last_name = re.sub("(^\\w+)", '', player) #getting the player's surname
     try:
         last_name = last_name[1:6]
     except IndexError:
@@ -40,7 +40,7 @@ def getting_table(link_name, player):
         link = [l.text for l in link if 'Overview' in l.text]
         player_name = ' '.join(link[0].split(' ')[:-1])
 
-        if player_name.lower() != player.lower():
+        if player_name.lower() != player.lower(): #making sure we get the right player
             i += 1
             continue
         else:
@@ -57,7 +57,7 @@ def cleaning(df):
     df['MP'] = list(game_time.split(':')[0] for game_time in df['MP'])
     df.iloc[:, 8:-1] = df.iloc[:, 8:-1].astype('float')
     df['Date'] = pd.to_datetime(df['Date'])
-    df['Age'] = list(age.split('-')[0] for age in df['Age'])
+    df['Age'] = list(age.split('-')[0] for age in df['Age']) #simplifing player's age
     df['PTS + TRB'] = df['PTS'] + df['TRB']
     df['AST + TRB'] = df['AST'] + df['TRB']
     df['PTS + AST'] = df['PTS'] + df['AST']
@@ -145,7 +145,7 @@ def plot(used_df, last_games, line, stat, player, minutes):
 
     plt.show()
 
-
+### MAKING ALL BUTTONS AND BOXES WORK
 def new_dataframe():
     new_link_name = player_gen(name)
     new_table = getting_table(new_link_name, name)
