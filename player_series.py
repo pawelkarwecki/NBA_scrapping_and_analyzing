@@ -5,6 +5,7 @@ import re
 from io import StringIO
 import matplotlib.pyplot as plt
 from matplotlib.widgets import RadioButtons, TextBox
+from unidecode import unidecode
 
 ### DEAFULT SETTINGS
 name = 'Victor Wembanyama'
@@ -31,20 +32,21 @@ def getting_table(link_name, player):
     i = 1
     while i > 0:
         url = f'https://www.basketball-reference.com/players/{link_name[1][0]}/{link_name[1]}{link_name[0]}0{i}/gamelog/2025'
+        print(url)
+        print(name)
         data = requests.get(url)
         soup = BeautifulSoup(data.text, features='lxml')
-        table = soup.find('table', id = 'pgl_basic')
-        df = pd.read_html(StringIO(str(table)))[0]
 
         link = soup.find_all('a', href = True)
         link = [l.text for l in link if 'Overview' in l.text]
         player_name = ' '.join(link[0].split(' ')[:-1])
-
-        if player_name.lower() != player.lower(): #making sure we get the right player
+        if unidecode(player_name.lower()) != player.lower(): #making sure we get the right player
             i += 1
             continue
-        else:
-            i = 0
+
+        table = soup.find('table', id = 'pgl_basic')
+        df = pd.read_html(StringIO(str(table)))[0]
+        i = 0
     return df
 
 table = getting_table(link_name, name)
@@ -75,13 +77,11 @@ def plot(used_df, last_games, line, stat, player, minutes):
 
     used_df = used_df[used_df['MP'] >= int(minutes)]
 
-    n_rows = len(stat) if len(stat) % 2 != 0 else len(stat)//2
-    n_col = 1 if len(stat) % 2 != 0 else 2
-    fig, ax = plt.subplots(n_rows, n_col, figsize = (10,3))
+    fig, ax = plt.subplots(2, 2, figsize = (10,3))
 
     n = 0
-    for i in range(0, n_rows):
-        for j in range(0, n_col):
+    for i in range(0, 2):
+        for j in range(0, 2):
             values = used_df[f'{stat[n]}'].iloc[-last_games:]
             colors = ['red' if used_df[f'{stat[n]}'].iloc[-min(last_games, len(used_df))+z] <= line[n] else 'green' for z in range(0, min(last_games, len(used_df)))]
             ax[i,j].bar(x = used_df['Rk'].iloc[-last_games:], height = values, color = colors)
@@ -93,7 +93,7 @@ def plot(used_df, last_games, line, stat, player, minutes):
             ax[i,j].set_ylabel(stat[n])
             n += 1
 
-    plt.suptitle(f'{player} last {last_games} games with {minutes}+ minutes')
+    plt.suptitle(f'{player} last {len(used_df['Rk'].iloc[-last_games:])} games with {minutes}+ minutes')
 
     box_min = plt.axes([0.05, 0.03, 0.1, 0.03])  
     text_box_min = TextBox(box_min, "Minutes: ", initial = minutes)
