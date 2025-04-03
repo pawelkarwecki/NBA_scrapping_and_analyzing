@@ -8,7 +8,7 @@ from matplotlib.widgets import RadioButtons, TextBox
 from unidecode import unidecode
 
 ### DEAFULT SETTINGS
-name = 'Victor Wembanyama'
+name = "Victor Wembanyama"
 minutes = 30
 last_games = 10
 line = [20.5, 20.5, 5.5, 12.5]
@@ -18,7 +18,7 @@ stat = ['PTS', 'FGA', 'AST', 'TRB']
 def player_gen(player): 
     player = player.lower()
     first_name = player[:2]
-    last_name = re.sub("(^\\w+)", '', player) #getting the player's surname
+    last_name = re.sub("(^\\S+)", '', player) #getting the player's surname
     try:
         last_name = last_name[1:6]
     except IndexError:
@@ -44,7 +44,7 @@ def getting_table(link_name, player):
             i += 1
             continue
 
-        table = soup.find('table', id = 'pgl_basic')
+        table = soup.find('table', id = 'player_game_log_reg')
         df = pd.read_html(StringIO(str(table)))[0]
         i = 0
     return df
@@ -54,12 +54,11 @@ table = getting_table(link_name, name)
 ### CLEANING THE DATAFRAME
 def cleaning(df):
     df = df.rename(columns={'Unnamed: 5': 'Where', 'Unnamed: 7': 'Result'})
-    to_drop = [i for i, n in enumerate(list(df['G'])) if (n == 'G') | pd.isna(n)] # dropping the repeating column names rows and rows with 'Inactive', 'Did Not Play' etc.
+    to_drop = [i for i, n in enumerate(list(df['Gcar'])) if (n == 'Gcar') | pd.isna(n)] # dropping the repeating column names rows and rows with 'Inactive', 'Did Not Play' etc.
     df = df.drop(index = to_drop)
     df['MP'] = list(game_time.split(':')[0] for game_time in df['MP'])
-    df.iloc[:, 8:-1] = df.iloc[:, 8:-1].astype('float')
+    df.iloc[:, 9:-1] = df.iloc[:, 9:-1].astype('float')
     df['Date'] = pd.to_datetime(df['Date'])
-    df['Age'] = list(age.split('-')[0] for age in df['Age']) #simplifing player's age
     df['PTS + TRB'] = df['PTS'] + df['TRB']
     df['AST + TRB'] = df['AST'] + df['TRB']
     df['PTS + AST'] = df['PTS'] + df['AST']
@@ -87,7 +86,10 @@ def plot(used_df, last_games, line, stat, player, minutes):
             ax[i,j].bar(x = used_df['Rk'].iloc[-last_games:], height = values, color = colors)
             ax[i, j].set_xticks(range(min(last_games, len(used_df))))
             ax[i,j].set_xticklabels(used_df['Opp'].iloc[-last_games:])
-            ax[i,j].set_ylim(0, max(values)+5)
+            try:
+                ax[i,j].set_ylim(0, max(values)+5)
+            except ValueError:
+                ax[i,j].set_ylim(0, 5)
             ax[i,j].axhline(y = line[n], color = 'black', alpha = 0.5)
             ax[i,j].bar_label(ax[i,j].containers[0])
             ax[i,j].set_ylabel(stat[n])
